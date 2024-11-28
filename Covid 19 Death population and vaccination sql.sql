@@ -360,4 +360,107 @@ SELECT *
 FROM WidPopVsWit
 
 
+SELECT *,
+       (Avg_Population / Population) * 100 AS Percentage_Population
+FROM (
+    SELECT 
+        Dea.continent,
+        Dea.Location,
+        Dea.date,
+        Vac.new_vaccinations,
+        Population,
+        DATEDIFF(Dea.date, Vac.date) AS Date_Interval,
+        AVG(Dea.population) OVER (PARTITION BY Dea.Continent) AS Avg_Population,
+        ROW_NUMBER() OVER (PARTITION BY Dea.population) AS Row_num,
+        RANK() OVER (PARTITION BY Dea.population) AS Rank_number,
+        DENSE_RANK() OVER (PARTITION BY Dea.population) AS Dense_Rk,
+        LAG(Dea.population) OVER (PARTITION BY Vac.location) AS Previous_Population,
+        LEAD(Dea.population) OVER (PARTITION BY Vac.location) AS Next_Population
+    FROM 
+        Anas.coviddeaths AS Dea
+    JOIN 
+        Anas.covidvaccinations AS Vac
+    ON 
+        Dea.continent = Vac.continent    
+        AND Dea.date = Vac.date
+) AS PopLaVAc;
+
+-- Query in Select 
+SELECT new_cases,total_deaths,population,
+	(SELECT  Avg(Population) FROM
+ Anas.coviddeaths) 
+FROM
+ Anas.coviddeaths;
+ 
+ 
+ -- QUERY IN FROM, SO WHAT I DID WAS TO TRY IT WITH SUBQUERY WHICH IS FROM CLAUSE AND ALSO TRIED AND ALTERNATIVE CTE'S 
+ 
+With Deat as 
+(SELECT 
+    new_cases, 
+    total_deaths, 
+    population,
+    SUM(Population) OVER () AS sum_running_Calculation,
+	AVG(Population) OVER () AS Avg_running_Calculation
+FROM 
+    Anas.coviddeaths)
+    select *, (Avg_running_Calculation/new_cases)
+    FROM Deat;
+
+SELECT *, (Avg_running_Calculation/new_cases)
+FROM 
+(SELECT
+    new_cases, 
+    total_deaths, 
+    population,
+	SUM(Population) OVER () AS sum_running_Calculation,
+	AVG(Population) OVER () AS Avg_running_Calculation
+	FROM 
+    Anas.coviddeaths) AS DEA;
+
+
+ 
+ SELECT new_cases,total_deaths,(population/2),
+(SELECT  Avg(Population) FROM
+ Anas.coviddeaths)AS
+ Avg_running_Calculation
+FROM
+ Anas.coviddeaths;
+ 
+
+ 
+SELECT a.new_cases,a.total_deaths,a.population, Avg_running_Calculation
+	FROM
+    (SELECT *, Avg(Population) over() as Avg_running_Calculation
+    FROM
+ Anas.coviddeaths)as a;
+ 
+
+-- Where cluase 
+-- The where clause joins fields from two tables 
+
+
+SELECT
+        Dea.continent,
+        Dea.Location,
+        Dea.date,
+        Population,
+        location,
+        Vac.new_vaccinations,
+        AVG(Dea.population) OVER (PARTITION BY Dea.Continent) AS Avg_Population,
+        ROW_NUMBER() OVER (PARTITION BY Dea.population) AS Row_num,
+        RANK() OVER (PARTITION BY Dea.population) AS Rank_number,
+        DENSE_RANK() OVER (PARTITION BY Dea.population) AS Dense_Rk,
+       LAG(Dea.population) OVER (PARTITION BY location) AS Previous_Population,
+       LEAD(Dea.population) OVER (PARTITION BY location) AS Next_Population
+    FROM 
+        Anas.coviddeaths AS Dea
+    Where continent in 
+    (Select continent From 
+        Anas.covidvaccinations as Vac)
+        -- Where location = 'Afghanistan')
+-- ) AS PopLaVAc;
+
+
+
 
